@@ -1,0 +1,19 @@
+{
+  "name": "bbc-raven",
+  "version": "1.0.0",
+  "description": "BBC Raven video server module for Companion",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geoffhouse/companion-module-bbc-raven.git"
+  },
+  "author": "Geoff House",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/geoffhouse/companion-module-bbc-raven/issues"
+  },
+  "homepage": "https://github.com/geoffhouse/companion-module-bbc-raven#readme"
+}
