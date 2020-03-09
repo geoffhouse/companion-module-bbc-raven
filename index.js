@@ -30,7 +30,6 @@ instance.prototype.init = function() {
 	// other init methods
 	self.init_colors();
 	self.init_connection();
-	self.init_feedbacks();
 }
 
 instance.prototype.updateConfig = function(config) {
@@ -42,19 +41,21 @@ instance.prototype.updateConfig = function(config) {
 	// save passed config
 	self.config = config;
 
-	// other init methods
+	// tear everything down
+	self.destroy()
+console.log("yru ahaom");
+	// ... and start again
 	self.init_colors();
 	self.init_connection();
-	self.init_feedbacks();
 }
 
 instance.prototype.init_colors = function() {
 	const self = this;
-	self.color_red = self.rgb(255, 0, 0);
+	self.color_red = self.rgb(177, 18, 17);
 	self.color_white = self.rgb(255, 255, 255);
 	self.color_black = self.rgb(0, 0, 0);
-	self.color_green = self.rgb(0, 255, 0);
-	self.color_blue = self.rgb(0, 0, 255);
+	self.color_green = self.rgb(34, 131, 41);
+	self.color_blue = self.rgb(63, 68, 234);
 }
 
 instance.prototype.init_poller = function() {
@@ -69,20 +70,24 @@ instance.prototype.init_poller = function() {
 			self.do_poll();
 		} 
 		else {
-			debug.error("Could not retrieve last notification id from web api");
+			self.log('debug','Could not retrieve last notification id from web api');
 		}
 	});
 }
 
 instance.prototype.destroy = function() {
 	var self = this;
-	self.states = {}
-	debug("destroy", self.id);
+	self.log('debug','destroy!!');
+	self.states = {
+		"portstates": {}
+	}
+	self.client = null;
 }
 
 /* --- init --- */
 
 instance.prototype.init_ports = function() {
+	console.log("init ports");
 	var self = this;
 
 	// fetches a list of ports to use in configuration
@@ -121,7 +126,29 @@ instance.prototype.init_ports = function() {
 			}
 		}
 		self.init_actions();
+		self.init_feedbacks();
+		self.init_portstates();
 	});
+}
+
+instance.prototype.init_portstates = function() {
+	var self = this;
+
+	for(var i in self.PORTLIST_ALL) {
+
+		// probe the port for state
+		var port = self.PORTLIST_ALL[i]["id"];
+		if(port != "" && port != "0") {
+
+			let url = `http://${self.config.host}/api/port/get?port=${port}`;
+			self.client.get(url, function (data) {
+
+				// we've got the portstate - now we can push it into the array
+				// - just like the notification does later on
+				self.push_portstate(data);
+			});
+		}
+	}
 }
 
 instance.prototype.init_connection = function() {
@@ -131,19 +158,31 @@ instance.prototype.init_connection = function() {
 	// try to log in - make sure the raven is there
 	let url = `http://${self.config.host}/api/hello`;
  
-    self.client.get(url, function (data, response) {
-        if(data == "Hello, world") {
-            self.status(self.STATE_OK);
-			self.init_ports();
-			self.init_poller();
-		}
-        else {
-        	self.status(self.STATUS_ERROR, 'Cannot connect');
-        }
-    });
+	console.log("init connection:", url);
+	process.on('uncaughtException',function(err){
+		console.log("error", err);
+		self.status(self.STATE_ERROR, 'Cannot connect');
+	});
 
-	debug = self.debug;
-	log = self.log;
+	try {
+		self.client.get(url, function (data, response) {
+			if(data == "Hello, world") {
+				console.log("connected");
+				self.status(self.STATE_OK);
+				self.init_ports();
+				self.init_poller();
+			}
+			else {
+				console.log("cannot connect");
+				self.status(self.STATE_ERROR, 'Cannot connect');
+			}
+		});
+	}
+	catch(err) {
+		console.log("caught error", err);
+		warning(err);
+		self.status(self.STATE_ERROR, 'Cannot connect');
+	}
 }
 
 /* --- notification polling --- */
@@ -152,30 +191,11 @@ instance.prototype.do_poll = function() {
 	var self = this;
 
 	let url = `http://${self.config.host}/api/notifications/get?timeout=20&id=${self.lastnotificationid}`;
+
 	self.client.get(url, function (data, response) {
-		console.log("poll ... ");
 		for(index in data) {
 			if(data[index]["type"] == "portstatuschanged") {
-				var port = data[index]["payload"]["port"];
-				var portmode = data[index]["payload"]["portmode"];
-				if(portmode == "play") {
-					var state = data[index]["payload"]["properties"]["playportstate"];
-				}
-				else if(portmode == "rec") {
-					var state = data[index]["payload"]["properties"]["recordportstate"];
-				}
-				self.states['portstates'][port] = state;
-
-				if(portmode == "play") {
-					self.checkFeedbacks('is_playing');
-					self.checkFeedbacks('is_paused');
-					self.checkFeedbacks('is_idle');
-				}
-				else if(portmode == "rec") {
-					self.checkFeedbacks('is_recording');
-					self.checkFeedbacks('is_monitoring');
-					self.checkFeedbacks('is_idle');
-				}
+				self.push_portstate(data[index]["payload"]);
 			}
 
 			// store result of poll time for next call
@@ -183,9 +203,38 @@ instance.prototype.do_poll = function() {
 				self.lastnotificationid = parseInt(data[index]["_id"]);
 			}
 		}
-		console.log("saved states:", self.states);
+
+		// we've either got a notification or it's timed out ... so repeat
 		setTimeout(self.do_poll.bind(self), 100);
 	});
+}
+
+instance.prototype.push_portstate = function(state) {
+	var self = this;
+	var port = state["port"];
+	var portmode = state["portmode"];
+
+	if(portmode == "play") {
+		var state = state["properties"]["playportstate"];
+	}
+	else if(portmode == "rec") {
+		var state = state["properties"]["recordportstate"];
+	}
+
+	// save it
+	self.states['portstates'][port] = state;
+
+	// raise feedback events
+	if(portmode == "play") {
+		self.checkFeedbacks('is_playing');
+		self.checkFeedbacks('is_paused');
+		self.checkFeedbacks('is_idle');
+	}
+	else if(portmode == "rec") {
+		self.checkFeedbacks('is_recording');
+		self.checkFeedbacks('is_monitoring');
+		self.checkFeedbacks('is_idle');
+	}
 }
 
 /* --- feedback --- */
@@ -205,7 +254,7 @@ instance.prototype.feedback = function (feedback) {
 
 			// calculate result
 			if(portstate == "PLAYINGP" || portstate == "LININGUPP") {
-				return { color: self.color_black, bgcolor: self.color_green }
+				return { color: self.color_white, bgcolor: self.color_green }
 			}
 			else {
 				return {}
@@ -217,7 +266,7 @@ instance.prototype.feedback = function (feedback) {
 
 			// calculate result
 			if(portstate == "ALLOCATEDP" || portstate == "LOADEDP") {
-				return { color: self.color_black, bgcolor: self.color_green }
+				return { color: self.color_white, bgcolor: self.color_green }
 			}
 			else {
 				return {}
@@ -229,7 +278,7 @@ instance.prototype.feedback = function (feedback) {
 
 			// calculate result
 			if(portstate == "IDLEP") {
-				return { color: self.color_black, bgcolor: self.color_blue }
+				return { color: self.color_white, bgcolor: self.color_blue }
 			}
 			else {
 				return {}
@@ -241,7 +290,7 @@ instance.prototype.feedback = function (feedback) {
 
 			// calculate result
 			if(portstate == "RECORDINGP") {
-				return { color: self.color_black, bgcolor: self.color_red }
+				return { color: self.color_white, bgcolor: self.color_red }
 			}
 			else {
 				return {}
@@ -252,8 +301,8 @@ instance.prototype.feedback = function (feedback) {
 		if (feedback.type == 'is_monitoring') {
 
 			// calculate result
-			if(portstate == "RECORDINGP") {
-				return { color: self.color_black, bgcolor: self.color_blue }
+			if(portstate == "MONITORINGP") {
+				return { color: self.color_white, bgcolor: self.color_blue }
 			}
 			else {
 				return {}
@@ -275,11 +324,10 @@ instance.prototype.init_feedbacks = function() {
 			description: 'If currently playing out, highlight button',
 			options: [
 				{
-					type: 'textinput',
+					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-					required: true,
-					default: 'bmplay0'
+                    choices: self.PORTLIST_PLAY
 				}
 			]
 		},
@@ -288,11 +336,10 @@ instance.prototype.init_feedbacks = function() {
 			description: 'If currently paused, highlight button',
 			options: [
 				{
-					type: 'textinput',
+					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-					required: true,
-					default: 'bmplay0'
+                    choices: self.PORTLIST_PLAY
 				}
 			]
 		},
@@ -301,11 +348,10 @@ instance.prototype.init_feedbacks = function() {
 			description: 'If currently recording, highlight button',
 			options: [
 				{
-					type: 'textinput',
+					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-					required: true,
-					default: 'bmplay0'
+                    choices: self.PORTLIST_REC
 				}
 			]
 		},
@@ -314,11 +360,10 @@ instance.prototype.init_feedbacks = function() {
 			description: 'If currently in monitor mode, highlight button',
 			options: [
 				{
-					type: 'textinput',
+					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-					required: true,
-					default: 'bmplay0'
+                    choices: self.PORTLIST_REC
 				}
 			]
 		},
@@ -327,11 +372,10 @@ instance.prototype.init_feedbacks = function() {
 			description: 'If currently idle, highlight button',
 			options: [
 				{
-					type: 'textinput',
+					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-					required: true,
-					default: 'bmplay0'
+                    choices: self.PORTLIST_ALL
 				}
 			]
 		}
@@ -375,7 +419,6 @@ instance.prototype.init_actions = function() {
 	var self = this;
     var portLabel = "Port ID";
 
-	console.log("port dropdown:", self.PORTLIST_PLAY);
     self.system.emit('instance_actions', self.id, {
         // beep
 		'beep_startup': {
@@ -842,7 +885,7 @@ instance.prototype.action = function(action) {
 	var self = this;
 	var cmd;
     var options = action.options;
-console.log("options:", options);
+
 	switch(action.action) {
 
         // beep
@@ -966,9 +1009,11 @@ console.log("options:", options);
 
     if(self.client !== undefined) {
 		let url = 'http://' + self.config.host + cmd;
-        console.log("url", url);
+        self.log('debug', 'sending API command: ' + url);
         self.client.get(url, function (data, response) {
-            console.log(data);
+			if(data != "OK") {
+				self.log('warn', 'ERROR from raven API :' + data);
+			}
         });
     }
 
