@@ -10,7 +10,7 @@ of Elgato Streamdeck devices.
 
 Raven is only available if you work for the BBC (sorry guys).
 
-This module allows you control most aspets of a raven server.
+This module allows you control most aspects of a raven server.
 If you find a missing feature, please raise an issue on github.
 
 ### Available commands for Raven ###
