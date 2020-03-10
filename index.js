@@ -87,7 +87,6 @@ instance.prototype.destroy = function() {
 /* --- init --- */
 
 instance.prototype.init_ports = function() {
-	console.log("init ports");
 	var self = this;
 
 	// fetches a list of ports to use in configuration
@@ -125,6 +124,7 @@ instance.prototype.init_ports = function() {
 				}
 			}
 		}
+		self.log('debug', 'found ' + self.PORTLIST_ALL.length + ' port(s) on raven server');
 		self.init_actions();
 		self.init_feedbacks();
 		self.init_portstates();
@@ -133,6 +133,8 @@ instance.prototype.init_ports = function() {
 
 instance.prototype.init_portstates = function() {
 	var self = this;
+
+	self.log('debug', 'fetching port status from raven');
 
 	for(var i in self.PORTLIST_ALL) {
 
@@ -158,29 +160,31 @@ instance.prototype.init_connection = function() {
 	// try to log in - make sure the raven is there
 	let url = `http://${self.config.host}/api/hello`;
  
-	console.log("init connection:", url);
-	process.on('uncaughtException',function(err){
-		console.log("error", err);
+	self.log('debug', 'attempting connection to raven API');
+
+	// generic error handler
+	process.on('uncaughtException',function(err) {
+		self.log('warn', err);
 		self.status(self.STATE_ERROR, 'Cannot connect');
 	});
 
 	try {
+		// connect to API
 		self.client.get(url, function (data, response) {
 			if(data == "Hello, world") {
-				console.log("connected");
+				self.log('debug', 'connected OK');
 				self.status(self.STATE_OK);
 				self.init_ports();
 				self.init_poller();
 			}
 			else {
-				console.log("cannot connect");
+				self.log('warn', 'failed to connect to raven API');
 				self.status(self.STATE_ERROR, 'Cannot connect');
 			}
 		});
 	}
 	catch(err) {
-		console.log("caught error", err);
-		warning(err);
+		self.log('warn', err);
 		self.status(self.STATE_ERROR, 'Cannot connect');
 	}
 }
