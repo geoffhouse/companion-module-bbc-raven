@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "api_version": "1.0.0",
   "keywords": [
-    "BBC"
+    "Video",
+    "Media",
+    "Broadcast",
+    "Server"
   ],
   "shortname": "raven",
   "description": "BBC Raven video server module for Companion",
