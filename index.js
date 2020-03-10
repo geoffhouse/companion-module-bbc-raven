@@ -43,7 +43,7 @@ instance.prototype.updateConfig = function(config) {
 
 	// tear everything down
 	self.destroy()
-console.log("yru ahaom");
+
 	// ... and start again
 	self.init_colors();
 	self.init_connection();
@@ -77,7 +77,6 @@ instance.prototype.init_poller = function() {
 
 instance.prototype.destroy = function() {
 	var self = this;
-	self.log('debug','destroy!!');
 	self.states = {
 		"portstates": {}
 	}
@@ -157,6 +156,11 @@ instance.prototype.init_connection = function() {
 	var self = this;
     self.client = new rest_client();
 	
+	// only connect when host is defined
+	if(self.config.host === undefined || self.config.host == "") {
+		return false;
+	}
+
 	// try to log in - make sure the raven is there
 	let url = `http://${self.config.host}/api/hello`;
  
@@ -164,7 +168,7 @@ instance.prototype.init_connection = function() {
 
 	// generic error handler
 	process.on('uncaughtException',function(err) {
-		self.log('warn', err);
+		self.log('warn', "Faied to connect to raven API");
 		self.status(self.STATE_ERROR, 'Cannot connect');
 	});
 
@@ -399,7 +403,7 @@ instance.prototype.config_fields = function () {
 			id: 'info',
 			width: 12,
 			label: 'Information',
-			value: 'This module allows you to control a BBC Raven video server. Sadly this is an internal product and not yet released outside the BBC.'
+			value: 'This module allows you to control a BBC Raven video server. Sadly this is an internal product and not yet released outside of the BBC.'
 		},
 		{
 			type: 'text',
@@ -413,7 +417,7 @@ instance.prototype.config_fields = function () {
 			id: 'host',
 			label: 'IP Address',
 			width: 6,
-			default: '192.168.32.2',
+			default: '',
 			regex: self.REGEX_IP
 		}
 	]
