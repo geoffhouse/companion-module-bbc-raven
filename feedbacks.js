@@ -1,4 +1,4 @@
-exports = module.exports = function() {
+exports = module.exports = function () {
 
 	var self = this;
 
@@ -12,7 +12,7 @@ exports = module.exports = function() {
 					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-                    choices: self.PORTLIST_PLAY
+					choices: self.PORTLIST_PLAY
 				}
 			]
 		},
@@ -24,7 +24,7 @@ exports = module.exports = function() {
 					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-                    choices: self.PORTLIST_PLAY
+					choices: self.PORTLIST_PLAY
 				}
 			]
 		},
@@ -36,7 +36,7 @@ exports = module.exports = function() {
 					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-                    choices: self.PORTLIST_REC
+					choices: self.PORTLIST_REC
 				}
 			]
 		},
@@ -48,7 +48,7 @@ exports = module.exports = function() {
 					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-                    choices: self.PORTLIST_REC
+					choices: self.PORTLIST_REC
 				}
 			]
 		},
@@ -60,7 +60,7 @@ exports = module.exports = function() {
 					type: 'dropdown',
 					label: "Port ID",
 					id: 'port',
-                    choices: self.PORTLIST_ALL
+					choices: self.PORTLIST_ALL
 				}
 			]
 		}

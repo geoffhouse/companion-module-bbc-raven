@@ -1,6 +1,6 @@
-exports = module.exports = function() {
+exports = module.exports = function () {
 
-    var self = this;
+	var self = this;
 
 	return [
 		{
@@ -25,5 +25,5 @@ exports = module.exports = function() {
 			default: '',
 			regex: self.REGEX_IP
 		}
-    ]
+	]
 };
