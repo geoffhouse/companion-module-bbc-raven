@@ -1,7 +1,11 @@
-exports = module.exports = function() {
+exports = module.exports = function(feedback) {
 
 	var self = this;
 	var options = feedback.options;
+
+	if(options === undefined || options.port === undefined) {
+		return {};
+	}
 
 	// if configured port has a value in the states array
 	if(self.states['portstates'][options.port] !== undefined) {

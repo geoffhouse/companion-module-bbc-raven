@@ -9,7 +9,8 @@ instance.prototype.config_fields  = require('./config');
 instance.prototype.init_actions   = require('./actions');
 instance.prototype.action         = require('./action');
 instance.prototype.init_feedbacks = require('./feedbacks');
-// instance.prototype.feedback       = require('./feedback');
+instance.prototype.feedback       = require('./feedback');
+instance.prototype.init_presets   = require('./presets');
 
 function instance(system, id, config) {
 	var self = this;
@@ -36,6 +37,7 @@ instance.prototype.init = function() {
 	// other init methods
 	self.init_colors();
 	self.init_connection();
+	self.init_presets();
 }
 
 instance.prototype.updateConfig = function(config) {
@@ -53,6 +55,7 @@ instance.prototype.updateConfig = function(config) {
 	// ... and start again
 	self.init_colors();
 	self.init_connection();
+	self.init_presets();
 }
 
 instance.prototype.init_colors = function() {
