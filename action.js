@@ -4,6 +4,10 @@ exports = module.exports = function (action) {
 	var cmd;
 	var options = action.options;
 
+	if(options.port === undefined) {
+		options.port = null;
+	}
+
 	switch (action.action) {
 
 		// beep

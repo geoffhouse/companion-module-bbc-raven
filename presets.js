@@ -127,6 +127,38 @@ exports = module.exports = function () {
 		},
 		{
 			category: 'Playout Controls',
+			label: "Pause",
+			bank: {
+				style: 'png',
+				text: '',
+				size: '14',
+				bgcolor: bgcolor_gray,
+				png64: pngImages.playout_pause
+			},
+			actions: [{
+				action: 'playout_pause',
+			}],
+			feedbacks: [{
+				type: 'is_paused',
+				options: {}
+			}]
+		},
+		{
+			category: 'Playout Controls',
+			label: "Previous",
+			bank: {
+				style: 'png',
+				text: '',
+				size: '14',
+				bgcolor: bgcolor_gray,
+				png64: pngImages.playout_previous
+			},
+			actions: [{
+				action: 'playout_previous',
+			}]
+		},
+		{
+			category: 'Playout Controls',
 			label: "Previous Step",
 			bank: {
 				style: 'png',
@@ -179,6 +211,20 @@ exports = module.exports = function () {
 			},
 			actions: [{
 				action: 'playout_nextframe',
+			}]
+		},
+		{
+			category: 'Playout Controls',
+			label: "Next",
+			bank: {
+				style: 'png',
+				text: '',
+				size: '14',
+				bgcolor: bgcolor_gray,
+				png64: pngImages.playout_next
+			},
+			actions: [{
+				action: 'playout_next',
 			}]
 		}
 	);

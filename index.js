@@ -179,6 +179,7 @@ instance.prototype.init_connection = function () {
 	process.on('uncaughtException', function (err) {
 		self.log('warn', "Faied to connect to raven API");
 		self.status(self.STATE_ERROR, 'Cannot connect');
+		console.log(err);
 	});
 
 	try {
@@ -192,6 +193,7 @@ instance.prototype.init_connection = function () {
 			}
 			else {
 				self.log('warn', 'failed to connect to raven API');
+				console.log(data);
 				self.status(self.STATE_ERROR, 'Cannot connect');
 			}
 		});
